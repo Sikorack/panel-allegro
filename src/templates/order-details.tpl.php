@@ -71,7 +71,7 @@
         </div>
         <div class="card-footer text-center">
             <a href="index.php?page=label&orderId=<?= $order['id'] ?>" class="btn btn-primary"><span class="bi bi-filetype-pdf"></span> Generuj etykietę</a>
-            <a href="index.php?page=orders" class="btn btn-secondary">← Wróć do listy</a>
+            <a href="index.php?page=orders" class="btn btn-secondary"><i class="bi bi-arrow-return-left"></i> Wróć do listy</a>
         </div>
     </div>
 <?php endif; ?>

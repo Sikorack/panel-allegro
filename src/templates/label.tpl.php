@@ -38,7 +38,7 @@
                     </div>
                     <h6>Paczka</h6>
                     <div class="input-group"><span class="input-group-text">Waga (kg)</span><input type="number" step="0.1" class="form-control" name="packageWeight" value="<?= htmlspecialchars($viewData['package']['weight']) ?>"><span class="input-group-text">Dł (cm)</span><input type="number" class="form-control" name="packageLength" value="<?= htmlspecialchars($viewData['package']['length']) ?>"><span class="input-group-text">Szer (cm)</span><input type="number" class="form-control" name="packageWidth" value="<?= htmlspecialchars($viewData['package']['width']) ?>"><span class="input-group-text">Wys (cm)</span><input type="number" class="form-control" name="packageHeight" value="<?= htmlspecialchars($viewData['package']['height']) ?>"></div>
-                    <div class="mt-4"><button type="submit" class="btn btn-primary">🖨️ Generuj PDF</button><a href="index.php?page=orders" class="btn btn-secondary">Anuluj</a></div>
+                    <div class="mt-4"><button type="submit" class="btn btn-primary"><span class="bi bi-filetype-pdf"></span> Generuj PDF</button> <a href="index.php?page=orders" class="btn btn-secondary"><i class="bi bi-x-circle"></i> Anuluj</a></div>
                 </form>
             </div>
 
