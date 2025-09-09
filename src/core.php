@@ -22,13 +22,23 @@ function checkAuth(): void {
 /**
  * Wysyła zapytanie do API Allegro.
  * To centralna funkcja do komunikacji z API.
+ * * @param string $method Metoda HTTP (GET, POST, etc.)
+ * @param string $endpoint Endpoint API
+ * @param mixed|null $data Dane do wysłania w ciele zapytania (dla POST, PUT)
+ * @param array $params Parametry do dodania do URL (dla GET)
+ * @param string $contentType Typ zawartości
+ * @return array Odpowiedź z API
  */
-function apiRequest(string $method, string $endpoint, $data = null, string $contentType = 'application/vnd.allegro.public.v1+json'): array {
+function apiRequest(string $method, string $endpoint, $data = null, array $params = [], string $contentType = 'application/vnd.allegro.public.v1+json'): array {
     if (!isset($_SESSION['access_token'])) {
         checkAuth();
     }
 
     $url = ALLEGRO_API_URL . $endpoint;
+    if (!empty($params)) {
+        $url .= '?' . http_build_query($params);
+    }
+
     $headers = [
         'Authorization: Bearer ' . $_SESSION['access_token'],
         'Accept: ' . $contentType
@@ -59,6 +69,7 @@ function apiRequest(string $method, string $endpoint, $data = null, string $cont
         'data' => json_decode($response, true) ?: $response
     ];
 }
+
 
 /**
  * Generuje unikalny identyfikator UUID v4.

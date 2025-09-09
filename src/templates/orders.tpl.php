@@ -1,17 +1,19 @@
 <?php
 /**
- * Szablon (widok) wyświetlający listę zamówień.
+ * Szablon (widok) wyświetlający listę zamówień z oznaczeniem wieloprzedmiotowych.
  */
 ?>
 <div class="card">
     <div class="card-header d-flex justify-content-between align-items-center">
-        <h5 class="mb-0">Zamówienia (<?= count($orders) ?>)</h5>
-        <a href="index.php?page=orders" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Odśwież</a>
+        <h5 class="mb-0">Zamówienia (<?= htmlspecialchars($pagination['totalOrders'] ?? 0) ?>)</h5>
+        <a href="index.php?page=orders&refresh=1" class="btn btn-sm btn-outline-secondary"><i class="bi bi-arrow-clockwise"></i> Odśwież</a>
     </div>
     <div class="card-body p-0">
         <?php if (!empty($error)): ?>
             <div class="alert alert-danger m-3"><?= htmlspecialchars($error) ?></div>
-        <?php elseif (empty($orders)): ?>
+        <?php endif; ?>
+        
+        <?php if (empty($orders)): ?>
             <p class="text-center p-5">Brak zamówień do wyświetlenia.</p>
         <?php else: ?>
             <div class="table-responsive">
@@ -29,7 +31,6 @@
                     </thead>
                     <tbody>
                         <?php foreach ($orders as $order): 
-                            // Zamiast szukać w głębi struktury, używamy teraz przygotowanego URL
                             $imageUrl = $order['imageUrl'] ?? null;
                         ?>
                             <tr>
@@ -41,6 +42,12 @@
                                 <td>
                                     <strong><?= htmlspecialchars($order['lineItems'][0]['offer']['name']) ?></strong><br>
                                     <small class="text-muted"><?= htmlspecialchars($order['id']) ?></small>
+                                    
+                                    <?php if (isset($order['itemCount']) && $order['itemCount'] > 1): ?>
+                                        <span class="badge bg-info text-dark mt-1">
+                                            <i class="bi bi-collection"></i> Wiele przedmiotów (<?= $order['itemCount'] ?>)
+                                        </span>
+                                    <?php endif; ?>
                                 </td>
                                 <td>
                                     <?= htmlspecialchars($order['buyer']['login']) ?><br>
@@ -70,4 +77,27 @@
             </div>
         <?php endif; ?>
     </div>
+    <?php if (($pagination['totalPages'] ?? 1) > 1): ?>
+    <div class="card-footer">
+        <nav aria-label="Paginacja zamówień">
+            <ul class="pagination justify-content-center mb-0">
+                <li class="page-item <?= $pagination['currentPage'] <= 1 ? 'disabled' : '' ?>">
+                    <a class="page-link" href="?page=orders&p=<?= $pagination['currentPage'] - 1 ?>" aria-label="Poprzednia">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <?php for ($i = 1; $i <= $pagination['totalPages']; $i++): ?>
+                    <li class="page-item <?= $i === $pagination['currentPage'] ? 'active' : '' ?>">
+                        <a class="page-link" href="?page=orders&p=<?= $i ?>"><?= $i ?></a>
+                    </li>
+                <?php endfor; ?>
+                <li class="page-item <?= $pagination['currentPage'] >= $pagination['totalPages'] ? 'disabled' : '' ?>">
+                    <a class="page-link" href="?page=orders&p=<?= $pagination['currentPage'] + 1 ?>" aria-label="Następna">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    <?php endif; ?>
 </div>

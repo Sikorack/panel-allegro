@@ -1,54 +1,78 @@
 <?php
 /**
  * Logika odpowiedzialna za pobieranie i wyświetlanie listy zamówień.
- * Domyślnie pokazuje tylko zamówienia gotowe do wysłania.
+ * Wersja zoptymalizowana z oznaczaniem zamówień wieloprzedmiotowych i obsługą błędów.
  */
 declare(strict_types=1);
 
-// Upewnij się, że użytkownik jest zalogowany
 checkAuth();
 
-// Przygotuj tablicę na dane dla szablonu
+$ordersPerPage = 3;
+$currentPage = isset($_GET['p']) ? (int)$_GET['p'] : 1;
+if ($currentPage < 1) {
+    $currentPage = 1;
+}
+
+// Przygotuj domyślną strukturę danych
 $data = [
     'title' => 'Zamówienia do wysłania',
     'orders' => [],
     'error' => null,
+    'pagination' => [
+        'currentPage' => $currentPage,
+        'totalPages' => 1,
+        'totalOrders' => 0,
+    ]
 ];
 
+$forceRefresh = isset($_GET['refresh']);
+
 try {
-    // Krok 1: Pobierz listę wszystkich zamówień
-    $response = apiRequest('GET', '/order/checkout-forms');
-    if ($response['code'] !== 200) {
-        throw new Exception('Nie udało się pobrać listy zamówień.');
-    }
-    $allOrders = $response['data']['checkoutForms'] ?? [];
+    if ($forceRefresh || !isset($_SESSION['orders_cache'])) {
+        $response = apiRequest('GET', '/order/checkout-forms', null, [
+            'status' => 'READY_FOR_PROCESSING',
+            'limit' => 100
+        ]);
 
-    // Krok 2: Przefiltruj zamówienia, aby pokazać tylko te gotowe do wysyłki
-    $ordersToShip = [];
-    foreach ($allOrders as $order) {
-        if ($order['status'] === 'READY_FOR_PROCESSING') {
-            $ordersToShip[] = $order;
+        if ($response['code'] !== 200) {
+            throw new Exception('Nie udało się pobrać listy zamówień z API Allegro.');
         }
-    }
 
-    // Krok 3: Dla każdego zamówienia do wysyłki pobierz zdjęcie oferty
-    foreach ($ordersToShip as &$order) {
-        if (isset($order['lineItems'][0]['offer']['id'])) {
-            $offerId = $order['lineItems'][0]['offer']['id'];
+        $allOrders = $response['data']['checkoutForms'] ?? [];
+        
+        $offerIds = array_map(fn($order) => $order['lineItems'][0]['offer']['id'] ?? null, $allOrders);
+        $offerImages = [];
+
+        foreach(array_filter($offerIds) as $offerId) {
             $offerDetails = apiRequest('GET', "/sale/offers/{$offerId}");
-            
             if ($offerDetails['code'] === 200 && !empty($offerDetails['data']['images'])) {
-                $order['imageUrl'] = $offerDetails['data']['images'][0]['url'];
+                $offerImages[$offerId] = $offerDetails['data']['images'][0]['url'];
             }
         }
+        
+        foreach ($allOrders as &$order) {
+            $order['itemCount'] = count($order['lineItems']);
+            $offerId = $order['lineItems'][0]['offer']['id'] ?? null;
+            if ($offerId && isset($offerImages[$offerId])) {
+                $order['imageUrl'] = $offerImages[$offerId];
+            }
+        }
+
+        $_SESSION['orders_cache'] = $allOrders;
     }
 
-    $data['orders'] = $ordersToShip;
+    $cachedOrders = $_SESSION['orders_cache'] ?? [];
+    $totalOrders = count($cachedOrders);
+    $totalPages = $totalOrders > 0 ? ceil($totalOrders / $ordersPerPage) : 1;
+    $offset = ($currentPage - 1) * $ordersPerPage;
+    
+    $data['orders'] = array_slice($cachedOrders, $offset, $ordersPerPage);
+    $data['pagination']['totalPages'] = $totalPages;
+    $data['pagination']['totalOrders'] = $totalOrders;
 
 } catch (Exception $e) {
+    // Zamiast tworzyć nową tablicę, dodajemy błąd do istniejącej struktury
     $data['error'] = $e->getMessage();
 }
 
-// Wyrenderuj szablon, przekazując mu przygotowane dane
 render('orders.tpl.php', $data);
-

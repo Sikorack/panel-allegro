@@ -1,7 +1,7 @@
 <?php
 /**
  * Logika odpowiedzialna za wyświetlanie formularza generowania etykiety.
- * Samo generowanie odbywa się asynchronicznie przez API.
+ * Umożliwia przypisywanie przedmiotów z zamówienia do różnych paczek.
  */
 declare(strict_types=1);
 
@@ -19,10 +19,10 @@ $data = [
 try {
     $order = apiRequest('GET', "/order/checkout-forms/{$orderId}")['data'];
     if (!$order) throw new Exception('Nie udało się pobrać danych zamówienia.');
-    
+
     $services = apiRequest('GET', '/shipment-management/delivery-services')['data']['services'] ?? [];
     $service = findShippingService($services, $order);
-    if (!$service) throw new Exception("Nie znaleziono pasującej usługi dostawy. Pradopodobnie nie masz umowy własnej z tą firmą przewozową.");
+    if (!$service) throw new Exception("Nie znaleziono pasującej usługi dostawy. Prawdopodobnie nie masz umowy własnej z tą firmą przewozową.");
     
     // Zapisujemy kluczowe dane w sesji, aby były dostępne dla skryptów API
     $_SESSION['current_order_data'] = $order;
@@ -49,6 +49,8 @@ function prepareLabelViewData(array $order, array $service): array {
     $addr = $order['delivery']['address'] ?? [];
     return [
         'serviceName' => $service['name'],
+        'lineItems' => $order['lineItems'],
+        'maxPackages' => $service['maxPackagesPerShipment'] ?? 0, // Dodajemy informację o limicie paczek
         'receiver' => [
             'name' => trim(($addr['firstName'] ?? '') . ' ' . ($addr['lastName'] ?? '')),
             'street' => $addr['street'] ?? '',
