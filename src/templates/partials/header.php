@@ -31,6 +31,9 @@
                 <li class="nav-item">
                     <a class="nav-link active" href="index.php?page=orders">Zamówienia</a>
                 </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="index.php?page=defined-packages">Zdefiniowane paczki</a>
+                </li>
             </ul>
             <a href="index.php?page=authorize" class="btn btn-sm btn-outline-light"><i class="bi bi-key"></i> Odśwież autoryzację</a>
         </div>

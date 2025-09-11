@@ -32,6 +32,7 @@ if (strpos($page, 'api/') === 0) {
             break;
         default:
             // Jeśli endpoint nie istnieje, zwróć błąd
+            http_response_code(404);
             echo json_encode(['error' => 'Nieznany endpoint API']);
     }
     exit; // Zakończ działanie skryptu po obsłużeniu API
@@ -44,6 +45,9 @@ switch ($page) {
         break;
     case 'label':
         require '../src/logic/label.php';
+        break;
+    case 'defined-packages':
+        require '../src/logic/defined-packages.php';
         break;
     
     // Logika autoryzacji przeniesiona tutaj

@@ -1,0 +1,18 @@
+[
+    {
+        "id": "e8a7c2e9-c72c-4f1e-a61d-5b3f1a9b2b3a",
+        "name": "Karton 30x20x10 (1kg)",
+        "weight": "1.0",
+        "length": "30",
+        "width": "20",
+        "height": "10"
+    },
+    {
+        "id": "f5d8e1c3-b8c1-4b3f-8e4a-9a8b7c6d5e4f",
+        "name": "Koperta bąbelkowa (0.5kg)",
+        "weight": "0.5",
+        "length": "25",
+        "width": "15",
+        "height": "5"
+    }
+]

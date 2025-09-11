@@ -48,6 +48,15 @@
                                 <h6 class="mb-0">Paczki</h6>
                                 <button type="button" id="add-package" class="btn btn-sm btn-outline-success"><i class="bi bi-plus-circle"></i> Dodaj paczkę</button>
                             </div>
+                            <div class="mb-3">
+                                <label for="package-template-select" class="form-label small text-muted">Użyj szablonu dla aktywnej paczki:</label>
+                                <select id="package-template-select" class="form-select form-select-sm">
+                                    <option value="">Wybierz zdefiniowaną paczkę...</option>
+                                    <?php foreach($viewData['definedPackages'] as $pkg): ?>
+                                        <option value='<?= htmlspecialchars(json_encode($pkg), ENT_QUOTES, 'UTF-8') ?>'><?= htmlspecialchars($pkg['name']) ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
                             <div id="packages-container"></div>
                         </div>
                     </div>
@@ -88,6 +97,27 @@ document.addEventListener('DOMContentLoaded', () => {
     let packageCounter = 0;
     let activePackageId = null;
 
+    const packageTemplateSelect = document.getElementById('package-template-select');
+    packageTemplateSelect.addEventListener('change', (e) => {
+        if (!e.target.value || !activePackageId) return;
+
+        try {
+            const data = JSON.parse(e.target.value);
+            const activePackage = packagesContainer.querySelector(`.package-box[data-package-id="${activePackageId}"]`);
+            if (activePackage) {
+                activePackage.querySelector('.package-weight').value = data.weight;
+                activePackage.querySelector('.package-length').value = data.length;
+                activePackage.querySelector('.package-width').value = data.width;
+                activePackage.querySelector('.package-height').value = data.height;
+            }
+        } catch (err) {
+            console.error('Błąd parsowania danych szablonu paczki:', err);
+        }
+        
+        // Zresetuj select po użyciu
+        e.target.value = '';
+    });
+
     const setActivePackage = (packageId) => {
         activePackageId = packageId;
         document.querySelectorAll('.package-box').forEach(p => {
@@ -127,14 +157,20 @@ document.addEventListener('DOMContentLoaded', () => {
         if (packageBox) setActivePackage(packageBox.dataset.packageId);
 
         if (e.target.classList.contains('remove-package')) {
-            e.target.closest('.package-box').querySelectorAll('.item-badge').forEach(badge => badge.remove());
-            e.target.closest('.package-box').remove();
-            if (activePackageId == packageBox.dataset.packageId) {
+            const boxToRemove = e.target.closest('.package-box');
+            // Zwróć przedmioty do listy
+            boxToRemove.querySelectorAll('.item-badge').forEach(badge => {
+                const itemLi = itemListContainer.querySelector(`li[data-id="${badge.dataset.id}"]`);
+                if (itemLi) itemLi.classList.remove('disabled');
+            });
+            boxToRemove.remove();
+            if (activePackageId == boxToRemove.dataset.packageId) {
                 const firstPackage = packagesContainer.querySelector('.package-box');
                 setActivePackage(firstPackage ? firstPackage.dataset.packageId : null);
             }
             updateUI();
         }
+
 
         if (e.target.classList.contains('remove-item')) {
             e.target.closest('.item-badge').remove();
@@ -242,16 +278,23 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
             if (!labelResponse.ok) {
-                throw new Error('Błąd podczas pobierania pliku PDF z etykietami.');
+                const errorData = await labelResponse.json().catch(() => ({ message: 'Błąd podczas pobierania pliku PDF z etykietami.' }));
+                throw new Error(errorData.message || 'Błąd podczas pobierania pliku PDF z etykietami.');
             }
             
             const blob = await labelResponse.blob();
             const url = window.URL.createObjectURL(blob);
-            window.open(url, '_blank');
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `etykiety-${new Date().toISOString().slice(0,10)}.pdf`;
+            document.body.appendChild(a);
+            a.click();
             window.URL.revokeObjectURL(url);
+            a.remove();
             
-            document.getElementById('loading-container').style.display = 'none';
-            document.getElementById('form-container').style.display = 'block';
+            // alert('Etykiety zostały pomyślnie wygenerowane i pobrane.');
+            window.location.href = 'index.php?page=orders&refresh=1';
+
 
         } catch (err) {
             document.getElementById('loading-container').style.display = 'none';

@@ -46,11 +46,19 @@ function findShippingService(array $services, array $order): ?array {
 }
 
 function prepareLabelViewData(array $order, array $service): array {
+    // Wczytywanie zdefiniowanych paczek
+    $packagesFile = __DIR__ . '/../data/packages.json';
+    $definedPackages = [];
+    if (file_exists($packagesFile)) {
+        $definedPackages = json_decode(file_get_contents($packagesFile), true) ?? [];
+    }
+
     $addr = $order['delivery']['address'] ?? [];
     return [
         'serviceName' => $service['name'],
         'lineItems' => $order['lineItems'],
         'maxPackages' => $service['maxPackagesPerShipment'] ?? 0, // Dodajemy informację o limicie paczek
+        'definedPackages' => $definedPackages, // <-- Przekazujemy paczki do widoku
         'receiver' => [
             'name' => trim(($addr['firstName'] ?? '') . ' ' . ($addr['lastName'] ?? '')),
             'street' => $addr['street'] ?? '',
